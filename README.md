@@ -1,6 +1,9 @@
 **Evaluating the feasibility of automating dataset retrieval for biodiversity monitoring**
 
-**Alexandre Fuster-Calvo, Sarah Valentin , Dominique Gravel**
+Authors: **Alexandre Fuster-Calvo*** **, Sarah Valentin , Dominique Gravel**
+*Contact author: alexfuster7@gmail.com
+
+
 
 ABSTRACT
 
