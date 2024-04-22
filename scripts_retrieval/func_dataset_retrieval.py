@@ -3,7 +3,15 @@ import json
 import requests
 import regex as re
 import pandas as pd
+import time
+import json
 
+# Open the JSON file
+#with open('data.json') as f:
+#    dataList = json.load(f)
+
+# Print the contents of the JSON file
+#print(dataList)
 
     
 def conv_query(x):
@@ -69,7 +77,7 @@ def extract_zenodo(entry, i_query):
            i_query])
 
 def extract_semantic_scholar(entry, i_query):
-    entry = entry.json()
+    #entry = entry.json()
     rows = []
     doi = ""
     if "DOI" in entry["externalIds"].keys():
@@ -174,24 +182,65 @@ def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_ma
         year = "{0}-".format(year_min)
     
     rows = []
+    delay_seconds = 5
     for i, query in queries.items():
         query_vars = get_query_var(query, pl = True, a = False)  # Generate queries variants (1) Québec/Quebec and (2) plural forms
         r = []
+       
         for q in query_vars:
+            time.sleep(delay_seconds)
             q = "+".join(q)
-            response = requests.get("http://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
-            print("http://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
-            for entry in response.json()["data"]:
-                content = requests.get("https://api.semanticscholar.org/graph/v1/paper/{0}?fields=url,externalIds,title,venue,year,abstract".format(entry["paperId"]))
+            response = requests.get("https://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
+            result = response.json()
+            print("we are here")
+            print("https://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
+            #result = dataList
+            if 'total' in result:
+                total = result["total"] # mostrar el total de las queries
+                relevant_results = result["data"]
+                # imprimir el total 
+                print(f'Analyzed {total} results. Total found: {len(relevant_results)} Found {relevant_results} relevant results')
+                print("http://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
+                for entry in result["data"]:
+                    time.sleep(delay_seconds)
+                    content = requests.get("https://api.semanticscholar.org/graph/v1/paper/{0}?fields=url,externalIds,title,venue,year,abstract".format(entry["paperId"]))
+                    res = content.json()
+                    #res = entry
+                    if 'paperId' in res:
 
-                r.append(extract_semantic_scholar(content, i))
+                         print('*******content json:********')
+                         print("https://api.semanticscholar.org/graph/v1/paper/{0}?fields=url,externalIds,title,venue,year,abstract".format(entry["paperId"]))
+                         print(res)
+                         r.append(extract_semantic_scholar(res, i))
+                        
+
+                    
+                   
+
+            else:
+                print(" ***** error ****")
+
+            print(result)
+           # 
+           
+    print("******* r ******8")
+    print(r)
     rows = rows + r
     df = pd.DataFrame(rows)
-    df.columns = ["doi", "url", "journal", "title", "description", "publication_date", "id_query"]
-    df["source"] = "semantic_scholar"
-    df['id_query'] = df['id_query'].astype(str)   
-    df['id_query'] = df.groupby(['url'])['id_query'].transform(lambda x: ','.join(list(set(x))))
-    df = df.drop_duplicates(subset = ["url"])
+    rows, cols = df.shape
+    
+    print("******* cols ******")
+    print(cols)
+    if cols == 7 :
+        df.columns = ["doi", "url", "journal", "title", "description", "publication_date", "id_query"]
+        df["source"] = "semantic_scholar"
+        df['id_query'] = df['id_query'].astype(str)   
+        df['id_query'] = df.groupby(['url'])['id_query'].transform(lambda x: ','.join(list(set(x))))
+        df = df.drop_duplicates(subset = ["url"])
+
+    # imprimir el total 
+    print("****** df ******")
+    print(df)
     return(df)
 
 
