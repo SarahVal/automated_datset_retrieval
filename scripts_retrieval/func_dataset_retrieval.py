@@ -6,12 +6,10 @@ import pandas as pd
 import time
 import json
 
-# Open the JSON file
-#with open('data.json') as f:
-#    dataList = json.load(f)
 
-# Print the contents of the JSON file
-#print(dataList)
+def create_file(filename, content):
+    with open(filename, 'w') as json_file:
+        json.dump(content, json_file, indent=4)
 
     
 def conv_query(x):
@@ -183,6 +181,7 @@ def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_ma
     
     rows = []
     delay_seconds = 5
+    errors = []
     for i, query in queries.items():
         query_vars = get_query_var(query, pl = True, a = False)  # Generate queries variants (1) Québec/Quebec and (2) plural forms
         r = []
@@ -199,7 +198,7 @@ def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_ma
                 total = result["total"] # mostrar el total de las queries
                 relevant_results = result["data"]
                 # imprimir el total 
-                print(f'Analyzed {total} results. Total found: {len(relevant_results)} Found {relevant_results} relevant results')
+                print(f'Analyzed {total} results. Found {len(relevant_results)} relevant results')
                 print("http://api.semanticscholar.org/graph/v1/paper/search?query={0}&offset={1}&limit={2}&year={3}".format(q, offset, limit, year))
                 for entry in result["data"]:
                     time.sleep(delay_seconds)
@@ -208,23 +207,26 @@ def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_ma
                     #res = entry
                     if 'paperId' in res:
 
-                         print('*******content json:********')
+                         print('*******paperId query:********')
                          print("https://api.semanticscholar.org/graph/v1/paper/{0}?fields=url,externalIds,title,venue,year,abstract".format(entry["paperId"]))
-                         print(res)
+                         #print(res)
                          r.append(extract_semantic_scholar(res, i))
-                        
+                    else:
+                        print(f'error paperId: {entry["paperId"]}')   
+                        print(res)   
+                        errors.append({"paperId":entry["paperId"], "error": res})
 
                     
                    
 
             else:
-                print(" ***** error ****")
+                print("***** error ****")
 
-            print(result)
+            #print(result)
            # 
            
-    print("******* r ******8")
-    print(r)
+    #print("******* r ******")
+    #print(r)
     rows = rows + r
     df = pd.DataFrame(rows)
     rows, cols = df.shape
@@ -241,9 +243,10 @@ def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_ma
     # imprimir el total 
     print("****** df ******")
     print(df)
-    return(df)
+    return  df, errors
 
-
+def retrieve_semantic_by_paperIds():
+    return
 
 def retrieve_zenodo(queries):
     rows = []
