@@ -80,7 +80,7 @@ compute_df_n_relevance_queries <- function(data) {
     
     n_negligible <- length(which(data$id_query == queries[i] & data$dataset_relevance == "X"))
     
-    n_non_valid <- length(which(data$id_query == queries[i] & data$valid_yn == "no"))
+    n_non_valid <- length(which(data$id_query == queries[i] & data$valid_yn == "not given"))
     
     n_non_relevant[i] <- n_negligible + n_non_valid
     
@@ -364,13 +364,13 @@ calculate_z.score_queries <- function(df) {
 
 
 # Calculate the number of publications without temporal duration information
-# These are going to be those whose value is "no" in the dataset, which is converted
+# These are going to be those whose value is "not given" in the dataset, which is converted
 # to NAs and then the NAs are counted
 
 #count_not.reported_temporal.duration <- function(df) {
   
   #dataset_temp_duration <- subset(df, 
-                               #   temporal_duration_y > 0 | temporal_duration_position == "no",
+                               #   temporal_duration_y > 0 | temporal_duration_position == "not given",
                                 #  select = c(temporal_duration_y,id_query))
   
  # dataset_temp_duration$temporal_duration_y <- as.numeric(dataset_temp_duration$temporal_duration_y)
@@ -388,7 +388,7 @@ calculate_z.score_queries <- function(df) {
 count_durations <- function(df, order_by) {
   
   dataset_temp_duration <- subset(df, 
-                                  temporal_duration_y > 0 | temporal_duration_y == "no",
+                                  temporal_duration_y > 0 | temporal_duration_y == "not given",
                                   select = c(temporal_duration_y,id_query))
   
   dataset_temp_duration$temporal_duration_y <- as.numeric(dataset_temp_duration$temporal_duration_y)
@@ -502,11 +502,11 @@ count_not.reported_spatial_range <- function(df) {
   
   dataset1$dataset_relevance <- as.factor(dataset1$dataset_relevance)
   
-  spatial_range_km2_vec <- dataset1$spatial_range_km2[dataset1$spatial_range_km2 != ""]
+  spatial_range_km2_vec <- dataset1$spatial_range_position[dataset1$spatial_range_position != ""]
   
   spatial_range_km2_vec <- spatial_range_km2_vec[!is.na(spatial_range_km2_vec)]
   
-  n_not_reported <- length(which(spatial_range_km2_vec == "no"))
+  n_not_reported <- length(which(spatial_range_km2_vec == "not given"))
   
   return(n_not_reported)
   
@@ -596,8 +596,8 @@ plot_spat_temp_relevance <- function(df) {
   
   
   
-  no_spatial.range <- length(which(dataset_filt$spatial_range_km2 == "no"))
-  no_temp.duration <- length(which(dataset_filt$temporal_duration_y == "no"))
+  no_spatial.range <- length(which(dataset_filt$spatial_range_km2 == "not given"))
+  no_temp.duration <- length(which(dataset_filt$temporal_duration_y == "not given"))
   
   
   dataset_filt$spatial_range_km2 <- as.numeric(dataset_filt$spatial_range_km2)
@@ -708,7 +708,8 @@ compute_df_data.type <- function(df) {
   
   # Calculate percentage of each one
   
-  df_data_type$percentage <- (df_data_type$N_articles)*100/sum(df_data_type$N_articles)
+  df_data_type <- df_data_type %>% 
+    mutate(percentage = N_articles/sum(N_articles)*100)
   
   
   return(df_data_type)
@@ -968,7 +969,7 @@ compute_df_location_info <- function(df) {
   df_loc_info <- df[,c("dataset_location", "spatial_range_position","temporal_range_position", "temporal_duration_position")]
   
   df_loc_info <- df_loc_info[df_loc_info$dataset_location != "",]
-  df_loc_info <- df_loc_info[df_loc_info$dataset_location != "no",]
+  df_loc_info <- df_loc_info[df_loc_info$dataset_location != "not given",]
   
   df_loc_info1 <- df_loc_info %>%               
     separate_rows(dataset_location, sep=",") 
@@ -1148,7 +1149,7 @@ count_position_features <- function(df) {
   
   tempr_position[which(tempr_position$temporal_range_position == "source link abstract"),"temporal_range_position"] <- "repository text"
   
-  tempr_position[which(tempr_position$temporal_range_position == "no"),"temporal_range_position"] <- "not given"
+  tempr_position[which(tempr_position$temporal_range_position == "not given"),"temporal_range_position"] <- "not given"
   
   
   
@@ -1181,7 +1182,7 @@ count_position_features <- function(df) {
   
   tempd_position[which(tempd_position$temporal_duration_position == "source link abstract"),"temporal_duration_position"] <- "repository text"
   
-  tempd_position[which(tempd_position$temporal_duration_position == "no"),"temporal_duration_position"] <- "not given"
+  tempd_position[which(tempd_position$temporal_duration_position == "not given"),"temporal_duration_position"] <- "not given"
   
   
   
@@ -1215,7 +1216,7 @@ count_position_features <- function(df) {
   
   spatialr_position[which(spatialr_position$spatial_range_position == "source link abstract"),"spatial_range_position"] <- "repository text"
   
-  spatialr_position[which(spatialr_position$spatial_range_position == "no"),"spatial_range_position"] <- "not given"
+  spatialr_position[which(spatialr_position$spatial_range_position == "not given"),"spatial_range_position"] <- "not given"
   
   
   
