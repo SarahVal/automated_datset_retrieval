@@ -20,9 +20,8 @@ count_by_relevance <- function(df) {
 
 count_relevance_by_source <- function(df) {
   
-  dataset_source <- df[-which(df$source == ""), ]
   
-  df_relevance_source <- as.data.frame.matrix(table(dataset_source$dataset_relevance,dataset_source$source))
+  df_relevance_source <- as.data.frame.matrix(table(df$dataset_relevance,df$source))
   
   df_relevance_source$relevance <- rownames(df_relevance_source)
   
@@ -1054,62 +1053,34 @@ get_keywords <- function(input_string, dataset_types) {
 
 ## Source of information across time
 
-
-
-
 df_source_time <- function(df) {
   
   dataset_l <- df[,c("publication_date", "source")]
   
-  #dataset_l <- dataset_l[-is.na(dataset_l),]
+  # Create a new column to store years
+  dataset_l$year <- NA
   
-  #dataset_l <- dataset_l[-which(is.na(dataset_l$publication_date)),]
-  
-  dataset_l <- dataset_l[-which((dataset_l$publication_date) == ""),]
-  
-  # Transforming date formats to years. Many entries are only years -> keep those to add them later.
-  # Those with length 1 will only contain the year:
-  
-  
-  dataset_l$publication_date <- gsub("-", "/", dataset_l$publication_date)
-  
-  
-  year <- numeric(length(dataset_l$publication_date))
-  
-  for (i in 1:length(dataset_l$publication_date)) {
-    
-    if(dataset_l$source[i] == "dryad" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
-      
-      
-    }else if(nchar(dataset_l$publication_date[i]) == 4){
-      
-      year[i] <- dataset_l$publication_date[i]
-      
-    }else if(dataset_l$source[i] == "semantic_scholar" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
-      
-      
-    }else  if(dataset_l$source[i] == "zenodo" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%Y/%m/%d"), format ="%Y")
+  # Transforming date formats to years
+  for (i in 1:nrow(dataset_l)) {
+    if (!is.na(dataset_l$publication_date[i])) {
+      if (dataset_l$source[i] == "dryad" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
+      } else if (nchar(dataset_l$publication_date[i]) == 4){
+        dataset_l$year[i] <- dataset_l$publication_date[i]
+      } else if (dataset_l$source[i] == "semantic_scholar" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
+      } else if (dataset_l$source[i] == "zenodo" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%Y/%m/%d"), format ="%Y")
+      } else {
+        # Handle other cases here
+      }
     }
-    
-    
   }
   
-  # semantic_scholar changes the format of the date, so now I am changing only those that give NA because the order d/m/Y was different
-  
-  year[which(is.na(year))] <- format(as.POSIXct(dataset_l$publication_date[which(is.na(year))], format = "%Y/%m/%d"), format ="%Y")
-  
-  dataset_l$year <- year
-  
-  
   return(dataset_l)
-  
 }
+
+
 
 
 

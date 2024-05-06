@@ -44,7 +44,9 @@ my.theme<-theme(axis.text=element_text(size=15),
 
 ```{r}
 
-dataset <- read_excel("../data/dataset_repository.xlsx")
+dataset <- read_excel("../data/dataset.xlsx")
+
+dataset <- dataset[dataset$source != "semantic_scholar" & dataset$source != " ",]
 
 ```
 
@@ -146,8 +148,8 @@ dataset <- dataset[dataset$dataset_relevance != "",]
 dataset <- dataset %>% dplyr::filter(valid_yn == "yes")
 dataset$dataset_relevance <- as.factor(dataset$dataset_relevance)
 
-dataset$id_query  <- stringr::str_trim(dataset$id_query )
-dataset$dataset_relevance  <- str_trim(dataset$dataset_relevance )
+dataset$id_query  <- stringr::str_trim(dataset$id_query)
+dataset$dataset_relevance  <- str_trim(dataset$dataset_relevance)
 
 head(dataset)
 ```
@@ -156,9 +158,12 @@ head(dataset)
 
 ```{r}
 
+table(dataset$dataset_relevance)
+
 df_N_relevance <- count_by_relevance(dataset)
 
-df_N_relevance
+df_N_relevance %>% 
+  mutate(percent = N/sum(N)*100)
 ```
 
 # 2. Queries performance
@@ -247,8 +252,6 @@ plot_queries_relevance_counts <- ggplot(df_queries_counts_ind,
 
 plot_queries_relevance_counts
 
-ggsave("plots_repo/plot_queries_raw.png", height = 5, width = 9)
-
 ```
 
 ### 2.2. F SCORE
@@ -286,8 +289,6 @@ plot_queries_scores <- ggplot(df_zscores_queries, aes(x = Precision, y = Recall,
 
 plot_queries_scores
 
-ggsave("plots_repo/plot_queries_scores.png", height = 7, width = 7)
-
 ```
 
 ```{r}
@@ -299,7 +300,7 @@ combined_plot_queries <- ggarrange(plot_queries_relevance_counts,
 
 combined_plot_queries
 
-ggsave("plots_repo/combined_plot_queries.png",height = 6,width = 13)
+ggsave("../figures/combined_plot_queries.png",height = 6,width = 13)
 
 ```
 
@@ -311,6 +312,11 @@ Discard datasets with negligible relevance (n = 16) for all the analyses from he
 
 ```{r}
 dataset <- dataset[dataset$dataset_relevance != "X",]
+
+
+# how many datasets with temporal range information
+
+print(paste(length(which(dataset$temporal_range_position == "not given")), "publications without temporal range data"))
 ```
 
 ### 3.1 Temporal range
@@ -342,6 +348,9 @@ dataset_temp_range[which(dataset_temp_range$temp_range_i == dataset_temp_range$t
 # cut lower limit range for outlier
 
 dataset_temp_range$temp_range_i[which(dataset_temp_range$temp_range_i < 1930)] <- 1930
+
+
+
 
 
 ```
@@ -476,6 +485,19 @@ plot_spatial_range_counts
 
 ```
 
+
+
+
+
+```{r}
+print(paste(length(which(dataset$geospatial_info_repo_page_text == "not given")), "publications without spatial range data in the repository"))
+
+```
+
+
+
+
+
 #### Temporal duration, spatial range, relevance
 
 ```{r}
@@ -528,7 +550,7 @@ heights = c(1,0.6))
 
 plot_combined_corpus
 
-ggsave("plots_repo/plot_combined_corpus.png", height = 10, width = 12)
+ggsave("../figures/plot_combined_corpus.png", height = 10, width = 12)
 ```
 
 # 6. Data format
@@ -881,9 +903,9 @@ df_locations$location <- factor(df_locations$location, levels=c("article text", 
 
 df_locations$information <- factor(df_locations$information, levels=c("not given", "sites IDs", "map", "administrative unit", "geographic feature", "distribution model", "range coordinates", "site coordinates", "sample coordinates"))
 
+df_filtered <- df_locations %>% filter(!is.na(information))
 
-
-plot_location_type_geoinfo <- ggplot(df_locations, aes(x=information, y = Freq, group = location, color = location)) +
+plot_location_type_geoinfo <- ggplot(df_filtered, aes(x=information, y = Freq, group = location, color = location)) +
    geom_segment( aes(x=information ,xend=information, y=0, yend=max(Freq)), color="grey") +
     geom_point(size=4, alpha = 0.5, aes(shape = location)) +
     coord_flip() +
@@ -934,14 +956,10 @@ ggsave("plot_location_inf.png", height = 5, width = 10)
 
 ```{r}
 
-## Only Semantic Scholar
+dataset <- read_excel("../data/dataset.xlsx")
 
-dataset_sc <- read.csv("../data/merged_datasets.csv", header = TRUE,sep=",")
+dataset_sc <- dataset[dataset$source == "semantic_scholar" & dataset$source != " ",]
 
-dataset_sc <- dataset_sc[which(dataset_sc$title != ""),]
-dataset_sc <- dataset_sc %>% dplyr::filter(valid_yn == "yes")
-
-dataset_sc <- dataset_sc[which(dataset_sc$source == "semantic_scholar"),]
 ```
 
 ```{r}
@@ -955,30 +973,42 @@ table(dataset_sc$valid_yn)
 table(dataset_sc$reason_non_valid[which(dataset_sc$valid_yn=="no")])
 ```
 
+
+
+
+
 ### 10.1. Number of datasets and relevance categories
 
-Only Semantic Schoar
+select only valid publications
+
+```{r}
+dataset_sc <- dataset_sc %>% dplyr::filter(valid_yn == "yes")
+```
+
+
+Only Semantic Scholar
 
 ```{r}
 
 df_N_relevance <- count_by_relevance(dataset_sc)
 
-df_N_relevance
+df_N_relevance %>% 
+  mutate(percent = N/sum(N)*100)
 ```
 
 ### 10.2 Relevance counts by source
 
-(only when comparing semantic scholar with repos)
 
 ```{r}
 
-dataset_repos_semantic<- read.csv("../data/merged_datasets.csv", header = TRUE,sep=",")
-dataset_repos_semantic <- dataset_repos_semantic[which(dataset_repos_semantic$title != ""),]
-dataset_repos_semantic <- dataset_repos_semantic %>% dplyr::filter(valid_yn == "yes")
+dataset <- read_excel("../data/dataset.xlsx")
 
-dataset_repos_semantic$dataset_relevance[which(dataset_repos_semantic$dataset_relevance == "cant access")] <- "No access"
+dataset <- dataset[which(dataset$dataset_relevance != ""),]
+dataset <- dataset %>% dplyr::filter(valid_yn == "yes")
 
-df_rel_source <- count_relevance_by_source(df = dataset_repos_semantic)
+dataset$dataset_relevance[which(dataset$dataset_relevance == "cant access")] <- "No access"
+
+df_rel_source <- count_relevance_by_source(df = dataset)
 
 df_rel_source$repositories <- df_rel_source$dryad + df_rel_source$zenodo
 
@@ -1011,7 +1041,7 @@ plot_relevance_source <- ggplot(df_rel_source_melt,
     ) +
     xlab("relevance")+
     ylab("dataset counts") +
-    scale_color_manual(values = c("#F8766D", "#00BA38","#619CFF", "grey40"))+
+    scale_color_manual(values = c("red", "green","blue", "grey40"))+
    scale_shape_manual(values = c(8, 15, 8, 15))+
     my.theme+
   labs(color = "source")+
@@ -1029,6 +1059,8 @@ ggsave("plots_semantic_scholar/plot_relevance_source.png", height = 5, width = 8
 
 ```{r}
 
+dataset_sc = dataset[dataset$source == "semantic_scholar",]
+
 dataset1 <- dataset_sc[dataset_sc$dataset_location != "no",]
 dataset1 <- dataset_sc[dataset_sc$dataset_format != "",]
 
@@ -1043,24 +1075,26 @@ plot_data.type_format(dataset1)
 
 ```{r}
 
+dataset <- read_excel("../data/dataset.xlsx")
 
-dataset_st <- dataset_repos_semantic[which(dataset_repos_semantic$dataset_relevance != c("No dataset", "No access", "X", "")),]
+dataset <- dataset %>% dplyr::filter(valid_yn == "yes")
+dataset$dataset_relevance[which(dataset$dataset_relevance == "cant access")] <- "No access"
 
-dataset_st
 
-dataset_st <- dataset_st[dataset_st$dataset_relevance != "No dataset",]
+dataset_st <- dataset[dataset$dataset_relevance != "No dataset",]
 dataset_st <- dataset_st[dataset_st$dataset_relevance != "No access",]
 dataset_st <- dataset_st[dataset_st$dataset_relevance != "X",]
 dataset_st <- dataset_st[dataset_st$dataset_relevance != "",]
+dataset_st <- dataset_st[!is.na(dataset_st$dataset_relevance),]
 
-dataset_st$dataset_relevance
+dataset_st$publication_year
 
-df.source_time <- df_source_time(df = dataset_st)
 
 ```
 
+
 ```{r}
-df_plot_source_time <- as.data.frame(table(df.source_time$year,df.source_time$source ))
+df_plot_source_time <- as.data.frame(table(dataset_st$publication_year,dataset_st$source ))
 
 colnames(df_plot_source_time) <- c("year", "source", "N")
 
@@ -1074,6 +1108,8 @@ plot_source_time <- ggplot(df_plot_source_time, aes(x = year, y = N, group = sou
   theme(axis.text.x = element_text(angle = 0, hjust=0.95,vjust=0.2, size = 9))+
   ylab("N retrieved datasets") +
   scale_x_discrete(guide = guide_axis(n.dodge=2))+
+    scale_color_manual(values = c("semantic_scholar" = "green", "dryad" = "red", "zenodo" = "blue"),
+                     labels = c("Dryad", "Semantic Scholar", "Zenodo")) +
   theme(legend.position="right")
 
 plot_source_time
