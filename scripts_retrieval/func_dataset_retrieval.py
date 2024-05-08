@@ -253,61 +253,41 @@ def retrieve_zenodo(queries):
     for i, query in queries.items():
         query_vars = get_query_var(query)  # Generate queries variants (1) Québec/Quebec and (2) plural forms
         r = []
+        #print('query_vars')
+        #print(query_vars)
+        type = 'dataset'
+        size = 100
+        access_token=  "Mf4LxV3d12BadrTyBke4vKphD6SO59ILOCHKGlQBbrcuKWMPlcUG51jBCA7p"
         for q in query_vars:
             q = "+"+" +".join(q)
-            #print("Searching for query...")
-           # print(q)
-            response = requests.get('https://zenodo.org/api/records',
-                                params={'q': q,
-                                        "type" : "dataset", 
-                                        "size":1000,
-                                        'access_token': "Mf4LxV3d12BadrTyBke4vKphD6SO59ILOCHKGlQBbrcuKWMPlcUG51jBCA7p"})
-            for j in range(0, len(response.json()["hits"]["hits"])):
-                entry = response.json()["hits"]["hits"][j]
-                r.append(extract_zenodo(entry, i))
-            r = [list(x) for x in set(tuple(x) for x in r)]
-            rows = rows + r
+            print("Searching for query...")
+            print(q)
+            response = requests.get("https://zenodo.org/api/records?q={0}&type={1}&size={2}&access_token={3}".format(q, type, size, access_token))
+            #response = requests.get('https://zenodo.org/api/records',
+            #                    params={'q': q,
+            #                            "type" : "dataset", 
+            #                            "size":100,
+            #                            'access_token': "Mf4LxV3d12BadrTyBke4vKphD6SO59ILOCHKGlQBbrcuKWMPlcUG51jBCA7p"})
+            
+            print(response.status_code)
+            if response.status_code == 200:
+                #print(response.json())
+                for j in range(0, len(response.json()["hits"]["hits"])):
+                    entry = response.json()["hits"]["hits"][j]
+                    r.append(extract_zenodo(entry, i)) 
+                r = [list(x) for x in set(tuple(x) for x in r)]
+                rows = rows + r
+            
+    
     df = pd.DataFrame(rows)
-    df.columns = ["url", "title", "description", "method", "notes", "keywords", "locations", "publication_date", "cited_articles", "id_query"]
-    df["source"] = "zenodo"
-    df['url'] = df['url'].apply(lambda row : "https://doi.org/" + row)
-    df['id_query'] = df['id_query'].astype(str)   
-    df['id_query'] = df.groupby(['url'])['id_query'].transform(lambda x: ','.join(list(set(x))))
-    df = df.drop_duplicates(subset = ["url"])
-    return(df)
-
-
-def retrieve_semantic_old(queries, nb_pages = 5, min_year=1980, max_year=2022):
-    rows = []
-    for i, query in queries.items():
-        query_vars = get_query_var(query, a = False)  # Generate queries variants (1) Québec/Quebec and (2) plural forms
-        r = []
-        for q in query_vars:
-            f = True
-            p=0
-            q = " ".join(q)
-            while p< nb_pages:
-                p = p + 1
-                response = request_semantic(
-                            keyword=q , page=p, min_year=min_year, max_year=max_year
-                        )
-
-                try:
-                    if "error" in response.json().keys():
-                        f = False
-                    else:
-                        r = r + extract_semantic_scholar(response, i)
-                except ValueError:
-                    f = False 
-                                 
-            r = [list(x) for x in set(tuple(x) for x in r)]
-            rows = rows + r
-    df = pd.DataFrame(rows)
-    df.columns = ["url", "title", "content", "keywords", "publication_date", "id_query"] 
-    df["source"] = "semantic"
-    df['id_query'] = df['id_query'].astype(str)   
-    df['id_query'] = df.groupby(['url'])['id_query'].transform(lambda x: ','.join(list(set(x))))
-    df = df.drop_duplicates(subset = ["url"])
+    rows, cols = df.shape
+    if cols == 10 :
+        df.columns = ["url", "title", "description", "method", "notes", "keywords", "locations", "publication_date", "cited_articles", "id_query"]
+        df["source"] = "zenodo"
+        df['url'] = df['url'].apply(lambda row : "https://doi.org/" + row)
+        df['id_query'] = df['id_query'].astype(str)   
+        df['id_query'] = df.groupby(['url'])['id_query'].transform(lambda x: ','.join(list(set(x))))
+        df = df.drop_duplicates(subset = ["url"])
     return(df)
 
 def request_semantic(keyword, page=1, min_year=2018, max_year=2022):
