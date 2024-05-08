@@ -20,9 +20,8 @@ count_by_relevance <- function(df) {
 
 count_relevance_by_source <- function(df) {
   
-  dataset_source <- df[-which(df$source == ""), ]
   
-  df_relevance_source <- as.data.frame.matrix(table(dataset_source$dataset_relevance,dataset_source$source))
+  df_relevance_source <- as.data.frame.matrix(table(df$dataset_relevance,df$source))
   
   df_relevance_source$relevance <- rownames(df_relevance_source)
   
@@ -80,7 +79,7 @@ compute_df_n_relevance_queries <- function(data) {
     
     n_negligible <- length(which(data$id_query == queries[i] & data$dataset_relevance == "X"))
     
-    n_non_valid <- length(which(data$id_query == queries[i] & data$valid_yn == "no"))
+    n_non_valid <- length(which(data$id_query == queries[i] & data$valid_yn == "not given"))
     
     n_non_relevant[i] <- n_negligible + n_non_valid
     
@@ -364,13 +363,13 @@ calculate_z.score_queries <- function(df) {
 
 
 # Calculate the number of publications without temporal duration information
-# These are going to be those whose value is "no" in the dataset, which is converted
+# These are going to be those whose value is "not given" in the dataset, which is converted
 # to NAs and then the NAs are counted
 
 #count_not.reported_temporal.duration <- function(df) {
   
   #dataset_temp_duration <- subset(df, 
-                               #   temporal_duration_y > 0 | temporal_duration_position == "no",
+                               #   temporal_duration_y > 0 | temporal_duration_position == "not given",
                                 #  select = c(temporal_duration_y,id_query))
   
  # dataset_temp_duration$temporal_duration_y <- as.numeric(dataset_temp_duration$temporal_duration_y)
@@ -388,7 +387,7 @@ calculate_z.score_queries <- function(df) {
 count_durations <- function(df, order_by) {
   
   dataset_temp_duration <- subset(df, 
-                                  temporal_duration_y > 0 | temporal_duration_y == "no",
+                                  temporal_duration_y > 0 | temporal_duration_y == "not given",
                                   select = c(temporal_duration_y,id_query))
   
   dataset_temp_duration$temporal_duration_y <- as.numeric(dataset_temp_duration$temporal_duration_y)
@@ -502,11 +501,11 @@ count_not.reported_spatial_range <- function(df) {
   
   dataset1$dataset_relevance <- as.factor(dataset1$dataset_relevance)
   
-  spatial_range_km2_vec <- dataset1$spatial_range_km2[dataset1$spatial_range_km2 != ""]
+  spatial_range_km2_vec <- dataset1$spatial_range_position[dataset1$spatial_range_position != ""]
   
   spatial_range_km2_vec <- spatial_range_km2_vec[!is.na(spatial_range_km2_vec)]
   
-  n_not_reported <- length(which(spatial_range_km2_vec == "no"))
+  n_not_reported <- length(which(spatial_range_km2_vec == "not given"))
   
   return(n_not_reported)
   
@@ -596,8 +595,8 @@ plot_spat_temp_relevance <- function(df) {
   
   
   
-  no_spatial.range <- length(which(dataset_filt$spatial_range_km2 == "no"))
-  no_temp.duration <- length(which(dataset_filt$temporal_duration_y == "no"))
+  no_spatial.range <- length(which(dataset_filt$spatial_range_km2 == "not given"))
+  no_temp.duration <- length(which(dataset_filt$temporal_duration_y == "not given"))
   
   
   dataset_filt$spatial_range_km2 <- as.numeric(dataset_filt$spatial_range_km2)
@@ -708,7 +707,8 @@ compute_df_data.type <- function(df) {
   
   # Calculate percentage of each one
   
-  df_data_type$percentage <- (df_data_type$N_articles)*100/sum(df_data_type$N_articles)
+  df_data_type <- df_data_type %>% 
+    mutate(percentage = N_articles/sum(N_articles)*100)
   
   
   return(df_data_type)
@@ -968,7 +968,7 @@ compute_df_location_info <- function(df) {
   df_loc_info <- df[,c("dataset_location", "spatial_range_position","temporal_range_position", "temporal_duration_position")]
   
   df_loc_info <- df_loc_info[df_loc_info$dataset_location != "",]
-  df_loc_info <- df_loc_info[df_loc_info$dataset_location != "no",]
+  df_loc_info <- df_loc_info[df_loc_info$dataset_location != "not given",]
   
   df_loc_info1 <- df_loc_info %>%               
     separate_rows(dataset_location, sep=",") 
@@ -1053,62 +1053,34 @@ get_keywords <- function(input_string, dataset_types) {
 
 ## Source of information across time
 
-
-
-
 df_source_time <- function(df) {
   
   dataset_l <- df[,c("publication_date", "source")]
   
-  #dataset_l <- dataset_l[-is.na(dataset_l),]
+  # Create a new column to store years
+  dataset_l$year <- NA
   
-  #dataset_l <- dataset_l[-which(is.na(dataset_l$publication_date)),]
-  
-  dataset_l <- dataset_l[-which((dataset_l$publication_date) == ""),]
-  
-  # Transforming date formats to years. Many entries are only years -> keep those to add them later.
-  # Those with length 1 will only contain the year:
-  
-  
-  dataset_l$publication_date <- gsub("-", "/", dataset_l$publication_date)
-  
-  
-  year <- numeric(length(dataset_l$publication_date))
-  
-  for (i in 1:length(dataset_l$publication_date)) {
-    
-    if(dataset_l$source[i] == "dryad" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
-      
-      
-    }else if(nchar(dataset_l$publication_date[i]) == 4){
-      
-      year[i] <- dataset_l$publication_date[i]
-      
-    }else if(dataset_l$source[i] == "semantic_scholar" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
-      
-      
-    }else  if(dataset_l$source[i] == "zenodo" & nchar(dataset_l$publication_date[i]) >= 5){
-      
-      year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%Y/%m/%d"), format ="%Y")
+  # Transforming date formats to years
+  for (i in 1:nrow(dataset_l)) {
+    if (!is.na(dataset_l$publication_date[i])) {
+      if (dataset_l$source[i] == "dryad" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
+      } else if (nchar(dataset_l$publication_date[i]) == 4){
+        dataset_l$year[i] <- dataset_l$publication_date[i]
+      } else if (dataset_l$source[i] == "semantic_scholar" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%d/%m/%Y"), format ="%Y")
+      } else if (dataset_l$source[i] == "zenodo" & nchar(dataset_l$publication_date[i]) >= 5){
+        dataset_l$year[i] <- format(as.POSIXct(dataset_l$publication_date[i], format = "%Y/%m/%d"), format ="%Y")
+      } else {
+        # Handle other cases here
+      }
     }
-    
-    
   }
   
-  # semantic_scholar changes the format of the date, so now I am changing only those that give NA because the order d/m/Y was different
-  
-  year[which(is.na(year))] <- format(as.POSIXct(dataset_l$publication_date[which(is.na(year))], format = "%Y/%m/%d"), format ="%Y")
-  
-  dataset_l$year <- year
-  
-  
   return(dataset_l)
-  
 }
+
+
 
 
 
@@ -1148,7 +1120,7 @@ count_position_features <- function(df) {
   
   tempr_position[which(tempr_position$temporal_range_position == "source link abstract"),"temporal_range_position"] <- "repository text"
   
-  tempr_position[which(tempr_position$temporal_range_position == "no"),"temporal_range_position"] <- "not given"
+  tempr_position[which(tempr_position$temporal_range_position == "not given"),"temporal_range_position"] <- "not given"
   
   
   
@@ -1181,7 +1153,7 @@ count_position_features <- function(df) {
   
   tempd_position[which(tempd_position$temporal_duration_position == "source link abstract"),"temporal_duration_position"] <- "repository text"
   
-  tempd_position[which(tempd_position$temporal_duration_position == "no"),"temporal_duration_position"] <- "not given"
+  tempd_position[which(tempd_position$temporal_duration_position == "not given"),"temporal_duration_position"] <- "not given"
   
   
   
@@ -1215,7 +1187,7 @@ count_position_features <- function(df) {
   
   spatialr_position[which(spatialr_position$spatial_range_position == "source link abstract"),"spatial_range_position"] <- "repository text"
   
-  spatialr_position[which(spatialr_position$spatial_range_position == "no"),"spatial_range_position"] <- "not given"
+  spatialr_position[which(spatialr_position$spatial_range_position == "not given"),"spatial_range_position"] <- "not given"
   
   
   

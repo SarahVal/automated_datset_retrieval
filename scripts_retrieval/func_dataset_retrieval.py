@@ -256,7 +256,7 @@ def retrieve_zenodo(queries):
         #print('query_vars')
         #print(query_vars)
         type = 'dataset'
-        size = 100
+        size = 1000
         access_token=  "Mf4LxV3d12BadrTyBke4vKphD6SO59ILOCHKGlQBbrcuKWMPlcUG51jBCA7p"
         for q in query_vars:
             q = "+"+" +".join(q)
@@ -277,7 +277,8 @@ def retrieve_zenodo(queries):
                     r.append(extract_zenodo(entry, i)) 
                 r = [list(x) for x in set(tuple(x) for x in r)]
                 rows = rows + r
-            
+            else :
+                print(f"there was an error fetching the data: status code : {response.status_code}")
     
     df = pd.DataFrame(rows)
     rows, cols = df.shape
