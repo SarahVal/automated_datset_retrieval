@@ -46,7 +46,8 @@ my.theme<-theme(axis.text=element_text(size=15),
 
 dataset <- read_excel("../data/dataset.xlsx")
 
-dataset <- dataset[dataset$source != "semantic_scholar" & dataset$source != " ",]
+dataset <- dataset %>%
+  filter(!(source %in% c("semantic_scholar", "referenced")))
 
 ```
 
@@ -596,11 +597,16 @@ df_dataset_types
 ```
 
 ```{r}
+dataset <- read_excel("../data/dataset.xlsx")
+dataset <- dataset %>%
+  filter(!(source %in% c("semantic_scholar", "referenced")))
+dataset <- dataset[dataset$dataset_relevance != "",]
+dataset <- dataset %>% dplyr::filter(valid_yn == "yes")
 
 ## Only relevant datasets:
 
 dataset_rel <- dataset[dataset$dataset_relevance != "X",]
-dataset_rel <- dataset_rel[dataset_rel$dataset_relevance != "cant access",]
+
 
 
 url <- c()
@@ -772,12 +778,14 @@ print(paste(n_any, "with at least one feature readily accessible (in the reposit
 
 ```
 
-How many per feature type
+How many per feature type {{{{{{{{{}}}}}}}}}
 
 ```{r}
 
 
 df_locations_plot <- count_position_features(dataset)
+
+df_locations_plot <- df_locations_plot[!is.na(df_locations_plot$location), ]
 
 
 
@@ -941,8 +949,10 @@ plot_location_inf <- ggarrange(
   
 )
 
+plot_location_inf
 
-ggsave("plot_location_inf.png", height = 5, width = 10)
+
+ggsave("plot_location_inf.png", height = 5, width = 13)
 
 ```
 
@@ -1130,7 +1140,9 @@ plots_semantic_repos <- ggarrange(
   nrow = 2
 )
 
-ggsave("plots_semantic_scholar/semantic_repos_comparison.png", height = 9, width = 9)
+plots_semantic_repos
+
+ggsave("emantic_repos_comparison.png", height = 9, width = 9)
 
 ```
 
