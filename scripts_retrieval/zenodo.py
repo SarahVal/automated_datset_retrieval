@@ -1,23 +1,17 @@
-from func_dataset_retrieval import retrieve_zenodo, create_file
+from func_dataset_retrieval import retrieve_zenodo, excel_data_to_dict
 import time
 
+# reading queries
+path_query='./data/df_query.xlsx'
+queries = excel_data_to_dict(path_query)
 
-
-
-queries = {10: 'Québec AND density AND species'}
-offset = 0
-limit = 50
-year_min = 1980
-year_max = 2022
-
+# retieval process
 df_zenodo = retrieve_zenodo(queries)
 
+# saving result in a file
 sufix =  time.time()
 name = f'zenodo_{sufix}.csv'
 df_zenodo.to_csv(name, sep=",", header=True, index=False)
-
-errorsFilename = f'errors_{sufix}.json'
-#create_file(errorsFilename, errors)
 
 
 

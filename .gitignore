@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 myenv
+
+zenodo_*.csv
+errors_*.json
+semantic_scholar_*.csv

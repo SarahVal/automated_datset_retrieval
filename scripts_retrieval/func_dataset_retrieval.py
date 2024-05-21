@@ -11,6 +11,16 @@ def create_file(filename, content):
     with open(filename, 'w') as json_file:
         json.dump(content, json_file, indent=4)
 
+def excel_data_to_dict(execl_path):
+    
+    df_queries = pd.read_excel(execl_path, engine = "openpyxl", converters={'id_query':int})
+    data = {}
+    count = 0
+    for query in df_queries['query']:
+        data[count] = query
+        count = count + 1
+    
+    return data 
     
 def conv_query(x):
     l = [y.strip() for y in x.split("AND")]
@@ -19,8 +29,6 @@ def conv_query(x):
     else:
         l = [l]
     return(l)
-
-
 
 def extract_dryad(entry, i_query):
     if "keywords" in entry.keys():
@@ -89,8 +97,6 @@ def extract_semantic_scholar(entry, i_query):
     entry["year"],
            i_query])
 
-
-
 def extract_semantic_scholar_old(entry, i_query):
     rows = []
     entry = entry.json()["results"]
@@ -128,7 +134,6 @@ def kw_lists(x, lkw):
         if cnt == 1:
             v = 1
     return(v)
-
 
 def kw_in_text(x, kw):
     v= 0
@@ -171,7 +176,6 @@ def get_plural(sg):
         engine = inflect.engine()
         pl = engine.plural(sg)
     return(pl)
-
 
 def retrieve_semantic(queries, offset = 0, limit = 100, year_min = 1980, year_max = None):
     if year_max is not None:
@@ -250,6 +254,7 @@ def retrieve_semantic_by_paperIds():
 
 def retrieve_zenodo(queries):
     rows = []
+    counter = 0
     for i, query in queries.items():
         query_vars = get_query_var(query)  # Generate queries variants (1) Québec/Quebec and (2) plural forms
         r = []
@@ -262,16 +267,17 @@ def retrieve_zenodo(queries):
             q = "+"+" +".join(q)
             print("Searching for query...")
             print(q)
-            response = requests.get("https://zenodo.org/api/records?q={0}&type={1}&size={2}&access_token={3}".format(q, type, size, access_token))
-            #response = requests.get('https://zenodo.org/api/records',
-            #                    params={'q': q,
-            #                            "type" : "dataset", 
-            #                            "size":100,
-            #                            'access_token': "Mf4LxV3d12BadrTyBke4vKphD6SO59ILOCHKGlQBbrcuKWMPlcUG51jBCA7p"})
+            #response = requests.get("https://zenodo.org/api/records?q={0}&type={1}&size={2}&access_token={3}".format(q, type, size, access_token))
+            response = requests.get('https://zenodo.org/api/records',
+                                params={'q': q,
+                                        "type" : type, 
+                                        "size":size,
+                                        'access_token': access_token})
             
-            print(response.status_code)
+            #print(f"status code : {response.status_code}")
             if response.status_code == 200:
-                #print(response.json())
+                print(len(response.json()["hits"]["hits"]))
+                counter = counter + len(response.json()["hits"]["hits"])
                 for j in range(0, len(response.json()["hits"]["hits"])):
                     entry = response.json()["hits"]["hits"][j]
                     r.append(extract_zenodo(entry, i)) 
@@ -280,6 +286,7 @@ def retrieve_zenodo(queries):
             else :
                 print(f"there was an error fetching the data: status code : {response.status_code}")
     
+    print(f" total of hits: {counter}")
     df = pd.DataFrame(rows)
     rows, cols = df.shape
     if cols == 10 :
