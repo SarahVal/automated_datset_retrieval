@@ -1,11 +1,12 @@
 ---
-title: "Analyses for Evaluating the feasibility of automating dataset retrieval for biodiversity monitoring"
-output: html_notebook
-Authors: Alexandre Fuster-Calvo, Sarah Valentin
+title: "Evaluating the feasibility of automating dataset retrieval for biodiversity monitoring"
+Authors: Alexandre Fuster-Calvo, Sarah Valentin, William Cabrera, Dominique Gravel
+
 ---
 
 
-**Script description:** This script manipulates the raw data of the retrieved datasets to show summary tables and figures.
+This script manipulates the raw data of the retrieved datasets to show summary tables and figures.
+
 
 ```{r}
 library(dplyr)
@@ -17,6 +18,7 @@ library(tidyr)
 library(stringr)
 library(ggrepel)
 library(readxl)
+library(forcats)
 
 source("Functions.R")
 ```
@@ -53,7 +55,7 @@ dataset <- dataset %>%
 
 
 
-Overlap between queries
+#### Overlap between queries
 
 ```{r}
 
@@ -77,8 +79,12 @@ for (i in 1:length(query_sets)) {
   }
 }
 
-# Print the overlap matrix
+
+# Round values
 overlap_matrix = round(overlap_matrix, 1)
+
+
+# Add queries' names
 
 query_names = c(
 "survey + species",
@@ -98,19 +104,19 @@ query_names = c(
 colnames(overlap_matrix) = query_names
 rownames(overlap_matrix) = query_names
 
-#colnames(overlap_matrix) = as.character(1:11)
-#rownames(overlap_matrix) = as.character(1:11)
 
+# Get only the upper triangle
 
 upper_triangle <- overlap_matrix
 upper_triangle[lower.tri(upper_triangle)] <- 0
-
 
 upper_triangle_df <- as.data.frame(as.table(upper_triangle))
 names(upper_triangle_df) <- c("row", "col", "value")
 upper_triangle_df <- upper_triangle_df[upper_triangle_df$row != upper_triangle_df$col, ]
 
+
 # Plot triangle heatmap
+
 plot_overlap_queries = ggplot(upper_triangle_df, aes(x = col, y = row, fill = value)) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "blue") +
@@ -120,10 +126,12 @@ plot_overlap_queries = ggplot(upper_triangle_df, aes(x = col, y = row, fill = va
         panel.grid.minor = element_blank()) +
   labs(x = NULL, y = NULL, fill = "% overlap")
 
+
+plot_overlap_queries
+
 ggsave("../figures/plot_overlap_queries.png", height = 5, width = 6)
 
 ```
-
 
 
 
@@ -135,7 +143,7 @@ table(dataset$valid_yn)
 
 ```
 
-count reasons for non-valid assignment:
+Count reasons for non-valid assignment:
 
 ```{r}
 
@@ -159,13 +167,12 @@ head(dataset)
 
 ```{r}
 
-table(dataset$dataset_relevance)
-
 df_N_relevance <- count_by_relevance(dataset)
 
 df_N_relevance %>% 
   mutate(percent = N/sum(N)*100)
 ```
+
 
 # 2. Queries performance
 
@@ -188,10 +195,6 @@ convert_query = data.frame("id_query" = as.character(seq(0,10)), "query" = c(
   
 ))
 
-
-```
-
-```{r}
 
 #split rows in function of character comas
 
@@ -222,7 +225,11 @@ df_queries_counts_ind <- df_queries_counts_ind %>%
 
 df_queries_counts_ind
 
+
+
 ```
+
+
 
 Plot the results:
 
@@ -269,7 +276,7 @@ df_zscores_queries$Recall <- round(df_zscores_queries$Recall, 2)
 
 df_zscores_queries
 
-write.table(df_zscores_queries, file = "df_zscores_queries.txt", sep = ",", quote = FALSE, row.names = F)
+write.table(df_zscores_queries, file = "df_zscores_queries.csv", sep = ",", quote = FALSE, row.names = F)
 
 ```
 
@@ -309,7 +316,8 @@ ggsave("../figures/combined_plot_queries.png",height = 6,width = 13)
 
 # 3. Temporal range and duration
 
-Discard datasets with negligible relevance (n = 16) for all the analyses from here.
+
+Discard datasets with negligible relevance (n = 16) for all the analyses from here in advance.
 
 ```{r}
 dataset <- dataset[dataset$dataset_relevance != "X",]
@@ -352,8 +360,6 @@ dataset_temp_range$temp_range_i[which(dataset_temp_range$temp_range_i < 1930)] <
 
 
 
-
-
 ```
 
 Plot the results:
@@ -382,9 +388,8 @@ p_temp_range <- ggplot(dataset_temp_range, aes(y=url, color = time_series)) +
 
 p_temp_range
 
-#ggsave("plots_repo/temporal_range.png", height = 7, width = 7)
-
 ```
+
 
 ### 3.2 Temporal duration counts
 
@@ -392,10 +397,7 @@ How many publications without temporal duration data?
 
 ```{r}
 
-#nNa <- count_not.reported_temporal.duration(dataset)
-
 print(paste(length(which(dataset$temporal_duration_position == "not given")), "publications without temporal duration data"))
-
 
 ```
 
@@ -416,7 +418,6 @@ plot_temp_duration <- plot_duration_counts(df = df_duration_counts,
 
 plot_temp_duration
 
-#ggsave("plots_repo/plot_temp_duration.png", height = 5, width = 9)
 
 ```
 
@@ -480,9 +481,6 @@ plot_spatial_range_counts <- plot_spat.range_counts(dataset)+
   coord_flip()
 
 plot_spatial_range_counts
-  
-
-#ggsave("plots_repo/plot_spatial_range_counts.png", height = 6, width = 6)
 
 ```
 
@@ -507,8 +505,6 @@ plot_spatial_temporal_relevance <- plot_spat_temp_relevance(df = dataset)
 
 plot_spatial_temporal_relevance
 
-#ggsave("plots_repo/plot_spatial_temporal_relevance.png", height = 6, width = 9)
-
 ```
 
 # 5. EBV data types
@@ -529,8 +525,6 @@ plot_data_type <- plot_data.type_counts(df_data_type_counts)+
   coord_flip()
 
 plot_data_type
-
-#ggsave("plots_repo/plot_data_type.png", height = 6, width = 9)
 
 ```
 
@@ -554,26 +548,10 @@ plot_combined_corpus
 ggsave("../figures/plot_combined_corpus.png", height = 10, width = 12)
 ```
 
-# 6. Data format
 
-Those datasets in the repository that are relevance category X don't have format information.
+# 7. Location of information - features
 
-```{r}
-
-plot_data_format_counts <- plot_data.type_format(dataset)
-
-plot_data_format_counts
-
-#ggsave("plots_repo/plot_data_format_counts.png", height = 7, width = 9)
-
-
-```
-
-
-
-# 8. Location of information - features
-
-### 8.1 % data type in abstract and title
+### 7.1 % data type in abstract and title
 
 Synonyms for the different EBV data type categories:
 
@@ -693,7 +671,7 @@ print(paste("so",
 
 ```
 
-### 8.2 Temporal range and duration, spatial range, species, and data type location
+### 7.2 Temporal range and duration, spatial range, species, and data type location
 
 ```{r}
 
@@ -801,11 +779,9 @@ plot_location_features <- ggplot(df_locations_plot, aes(x=location, y = Freq, gr
 
 plot_location_features
 
-ggsave("plots_repo/location_features.png", height = 5, width = 6.5)
-
 ```
 
-#9. Spatial information format
+#8. Spatial information format
 
 ```{r}
 
@@ -927,8 +903,6 @@ plot_location_type_geoinfo <- ggplot(df_filtered, aes(x=information, y = Freq, g
 
 plot_location_type_geoinfo
 
-  
-ggsave("plots_repo/location_type_geoinfo.png", height = 5, width = 7)
 
 
 ```
@@ -957,7 +931,91 @@ ggsave("plot_location_inf.png", height = 5, width = 13)
 
 
 
+
+# 9. Taxa (repositoreies)
+
+```{r}
+
+df_taxa <- read.csv("../data/df_taxa_fig.csv", header = TRUE,sep=",")
+
+df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Mammalia\xa0")] <- "Mammalia"
+df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Amphibia\xa0")] <- "Amphibia"
+df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Osteichthyes")] <- "Fish"
+
+df_taxa_spp <- df_taxa[which(df_taxa$X1_10_spp != ""),]
+
+df_taxa_spp$X1_10_spp <- as.factor(df_taxa_spp$X1_10_spp)
+
+df_taxa_spp$dataset_relevance <- factor(df_taxa_spp$dataset_relevance, levels = c("H", "M", "L"))
+
+plot_spp <- ggplot(df_taxa_spp, aes(x = X1_10_spp, group = dataset_relevance, fill = dataset_relevance)) +
+  geom_bar(aes(x = forcats::fct_infreq(X1_10_spp), fill = dataset_relevance))+
+  my.theme+
+  coord_flip()+
+    xlab("")+
+    ylab("publications counts") +
+    ggtitle("Species-level studies")+
+    scale_fill_manual(name = "dataset relevance",
+                       values = alpha(c("red","purple2", "dodgerblue"), .7))+
+ # theme_bw()+
+    my.theme
+
+
+df_taxa$more_10spp[which(df_taxa$more_10spp == "Mammalia\xa0")] <- "Mammalia"
+df_taxa$more_10spp[which(df_taxa$more_10spp == "Osteichthyes")] <- "Fish"
+df_taxa_comm <- df_taxa[which(df_taxa$more_10spp != ""),]
+
+
+
+
+df_taxa_comm$more_10spp <- as.factor(df_taxa_comm$more_10spp)
+df_taxa_comm$n <- as.numeric(df_taxa_comm$n)
+
+df_taxa_comm$n[which(df_taxa_comm$n == 1)] <- 2
+df_taxa_comm$n[which(df_taxa_comm$n == 2)] <- 3
+
+df_taxa_comm <- df_taxa_comm[order(-df_taxa_comm$n), ]
+
+
+df_taxa_comm$dataset_relevance <- factor(df_taxa_comm$dataset_relevance, levels = c("H", "M", "L"))
+
+plot_comm <- ggplot(df_taxa_comm, aes(x = more_10spp, y = n, fill = dataset_relevance)) +
+   geom_bar(stat = "identity", position = position_dodge2(preserve = "total"),  color = "white")+
+  coord_flip()+
+  ggtitle("Community-level studies")+
+    xlab("")+
+    ylab("N taxa") +
+    scale_fill_manual(name = "dataset relevance",
+                       values = alpha(c("red","purple2", "dodgerblue"), .7))+
+  scale_y_continuous(limits = c(0, max(df_taxa_comm$n)), breaks = c(25,50,75, 100, 125, 150, 175))+
+ # theme_bw()+
+    my.theme
+
+
+plots_taxa <- ggarrange(plot_spp,
+          plot_comm,
+          common.legend = TRUE)
+
+ggsave("plots_taxa.png", height = 8, width = 11)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ######################################################### 
+
+
+
 
 # 10. Semantic Scholar
 
@@ -1075,12 +1133,10 @@ dataset1 <- dataset_sc[dataset_sc$dataset_format != "",]
 
 plot_data.type_format(dataset1)
 
-#ggsave("plots_semantic_scholar/formats_semschol.png", height = 5, width = 8)
-  
 
 ```
 
-### 10.4 Source of information across time
+### 9.4 Source of information across time
 
 ```{r}
 
@@ -1123,9 +1179,6 @@ plot_source_time <- ggplot(df_plot_source_time, aes(x = year, y = N, group = sou
 
 plot_source_time
 
-
-#ggsave("plots_semantic_scholar/plot_source_time.png", height = 5, width = 10)
-
 ```
 
 ```{r}
@@ -1145,73 +1198,4 @@ ggsave("emantic_repos_comparison.png", height = 9, width = 9)
 
 ```
 
-
-# 11. Taxa (repos)
-
-```{r}
-library(forcats)
-
-df_taxa <- read.csv("../data/df_taxa_fig.csv", header = TRUE,sep=",")
-
-df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Mammalia\xa0")] <- "Mammalia"
-df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Amphibia\xa0")] <- "Amphibia"
-df_taxa$X1_10_spp[which(df_taxa$X1_10_spp == "Osteichthyes")] <- "Fish"
-
-df_taxa_spp <- df_taxa[which(df_taxa$X1_10_spp != ""),]
-
-df_taxa_spp$X1_10_spp <- as.factor(df_taxa_spp$X1_10_spp)
-
-df_taxa_spp$dataset_relevance <- factor(df_taxa_spp$dataset_relevance, levels = c("H", "M", "L"))
-
-plot_spp <- ggplot(df_taxa_spp, aes(x = X1_10_spp, group = dataset_relevance, fill = dataset_relevance)) +
-  geom_bar(aes(x = forcats::fct_infreq(X1_10_spp), fill = dataset_relevance))+
-  my.theme+
-  coord_flip()+
-    xlab("")+
-    ylab("publications counts") +
-    ggtitle("Species-level studies")+
-    scale_fill_manual(name = "dataset relevance",
-                       values = alpha(c("red","purple2", "dodgerblue"), .7))+
- # theme_bw()+
-    my.theme
-
-
-df_taxa$more_10spp[which(df_taxa$more_10spp == "Mammalia\xa0")] <- "Mammalia"
-df_taxa$more_10spp[which(df_taxa$more_10spp == "Osteichthyes")] <- "Fish"
-df_taxa_comm <- df_taxa[which(df_taxa$more_10spp != ""),]
-
-
-
-
-df_taxa_comm$more_10spp <- as.factor(df_taxa_comm$more_10spp)
-df_taxa_comm$n <- as.numeric(df_taxa_comm$n)
-
-df_taxa_comm$n[which(df_taxa_comm$n == 1)] <- 2
-df_taxa_comm$n[which(df_taxa_comm$n == 2)] <- 3
-
-df_taxa_comm <- df_taxa_comm[order(-df_taxa_comm$n), ]
-
-
-df_taxa_comm$dataset_relevance <- factor(df_taxa_comm$dataset_relevance, levels = c("H", "M", "L"))
-
-plot_comm <- ggplot(df_taxa_comm, aes(x = more_10spp, y = n, fill = dataset_relevance)) +
-   geom_bar(stat = "identity", position = position_dodge2(preserve = "total"),  color = "white")+
-  coord_flip()+
-  ggtitle("Community-level studies")+
-    xlab("")+
-    ylab("N taxa") +
-    scale_fill_manual(name = "dataset relevance",
-                       values = alpha(c("red","purple2", "dodgerblue"), .7))+
-  scale_y_continuous(limits = c(0, max(df_taxa_comm$n)), breaks = c(25,50,75, 100, 125, 150, 175))+
- # theme_bw()+
-    my.theme
-
-
-plots_taxa <- ggarrange(plot_spp,
-          plot_comm,
-          common.legend = TRUE)
-
-ggsave("plots_taxa.png", height = 8, width = 11)
-
-```
 
