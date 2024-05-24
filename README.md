@@ -18,6 +18,14 @@ _Main clonclusions_
 
 The algorithms retrieved 91 (57%) relevant datasets for our database, showing the value of automated dataset search in repositories. Additionally, we find that scientific publication sources offer broader temporal coverage and can serve as conduits guiding researchers toward other valuable data sources. However, our manual evaluation highlights a significant challenge to distinguish datasets by their relevance—scarcity and non-uniform distribution of metadata, especially pertaining to spatial and temporal extents. We present an evaluative framework based on predefined criteria that can be adopted by automated algorithms for streamlined prioritization, and we make our manually evaluated data publicly available, serving as a benchmark for improving classification techniques. Finally, our study advocates for the implementation of metadata standards tailored for automated retrieval systems by repositories and sources of scientific literature. This, coupled with the rapid evolution of classification algorithms, holds transformative potential to advance in biodiversity monitoring and decisively steering the course of well-informed decision-making processes.
 
+
+FOLDERS:
+
+- **data** contains the raw data used for the analyses
+- **figures** figures of the manuscript produced in the code 
+- **scripts** R script to run analyses
+- **scripts_retrieval** Python scripts to run dataset retrieval
+
 _Run the code_
 
 - install python

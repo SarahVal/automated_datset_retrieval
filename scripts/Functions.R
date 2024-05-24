@@ -362,25 +362,6 @@ calculate_z.score_queries <- function(df) {
 
 
 
-# Calculate the number of publications without temporal duration information
-# These are going to be those whose value is "not given" in the dataset, which is converted
-# to NAs and then the NAs are counted
-
-#count_not.reported_temporal.duration <- function(df) {
-  
-  #dataset_temp_duration <- subset(df, 
-                               #   temporal_duration_y > 0 | temporal_duration_position == "not given",
-                                #  select = c(temporal_duration_y,id_query))
-  
- # dataset_temp_duration$temporal_duration_y <- as.numeric(dataset_temp_duration$temporal_duration_y)
-  
-  
- # nNa <- length(dataset_temp_duration[is.na(dataset_temp_duration)])
-  
- # return(nNa)
-  
-#}
-
 
 # Obtain dataframe with counts of each duration
 
@@ -436,15 +417,7 @@ plot_duration_counts <- function(df, counts_Na) {
                                    ggtheme = theme_pubclean(),
                                    #title = "Temporal duration in retrieved datasets"
                      )+
-   # geom_label(
-   #   label= paste(counts_Na, "not reported"), 
-   #   x=20,
-   #   y=max(df$counts)-2,
-   #  label.padding = unit(0.55, "lines"), # Rectangle size around label
-    #  label.size = 0.15,
-    #  color = "black",
-    #  fill="white"
-   # )+
+
     theme(axis.text.x = element_text(angle = 0, hjust=0.5,vjust=0.2))+
     my.theme
   
@@ -616,15 +589,6 @@ plot_spat_temp_relevance <- function(df) {
     ylab("duration (years)")+
     geom_boxplot(outlier.shape = NA)+
     geom_jitter(aes(colour = dataset_relevance),shape=16, position=position_jitter(0.2), size =4.5, alpha = 0.5) +
-    #geom_label(
-    #  label= paste(no_spatial.range+no_temp.duration, "with no data:", no_spatial.range, "(spatial range),", no_temp.duration, "(temp. duration)"), 
-     # x = "(5e+03,1e+04]",
-     # y=max(na.omit(dataset_filt$temporal_duration_y)),
-     # label.padding = unit(0.55, "lines"), # Rectangle size around label
-     # label.size = 0.15,
-     # color = "black",
-     # fill="white"
-   # )+
     scale_color_manual(name = "dataset relevance",values = c("red","dodgerblue","purple2"))+
     labs(col = "Relevance")+
     scale_x_discrete(labels = c("=< 5.000", "(5.000-15.0000]", "> 15.000"))+
