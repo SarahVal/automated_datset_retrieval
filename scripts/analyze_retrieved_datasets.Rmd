@@ -918,7 +918,7 @@ plot_location_inf <- ggarrange(
   nrow = 1,
   ncol = 2,
   
-  labels = c("a", "b")
+  labels = c("A", "B")
   
 )
 
@@ -1107,7 +1107,7 @@ plot_relevance_source <- ggplot(df_rel_source_melt,
       legend.position="top"
     ) +
     xlab("relevance")+
-    ylab("dataset counts") +
+    ylab("publication counts") +
     scale_color_manual(values = c("red", "black","blue", "grey40"))+
    scale_shape_manual(values = c(8, 15, 8, 15))+
     my.theme+
@@ -1118,7 +1118,7 @@ plot_relevance_source <- ggplot(df_rel_source_melt,
 
 plot_relevance_source
 
-ggsave("plots_semantic_scholar/plot_relevance_source.png", height = 5, width = 8)
+#ggsave("plots_semantic_scholar/plot_relevance_source.png", height = 5, width = 8)
 
 ```
 
@@ -1171,11 +1171,12 @@ plot_source_time <- ggplot(df_plot_source_time, aes(x = year, y = N, group = sou
     theme_bw()+
   my.theme+
   theme(axis.text.x = element_text(angle = 0, hjust=0.95,vjust=0.2, size = 9))+
-  ylab("N retrieved datasets") +
+  ylab("publication counts") +
   scale_x_discrete(guide = guide_axis(n.dodge=2))+
     scale_color_manual(values = c("semantic_scholar" = "black", "dryad" = "red", "zenodo" = "blue"),
                      labels = c("dryad", "semantic scholar", "zenodo")) +
-  theme(legend.position="right")
+  theme(legend.position="right")+
+  ggtitle("")
 
 plot_source_time
 
@@ -1186,7 +1187,7 @@ plot_source_time
 plots_semantic_repos <- ggarrange(
   plot_relevance_source,
   plot_source_time,
-  labels = c("a", "b"),
+  labels = c("A", "B"),
   font.label = list(size = 20),
   ncol = 1,
   nrow = 2
@@ -1194,7 +1195,7 @@ plots_semantic_repos <- ggarrange(
 
 plots_semantic_repos
 
-ggsave("emantic_repos_comparison.png", height = 9, width = 9)
+ggsave("semantic_repos_comparison.png", height = 9, width = 9)
 
 ```
 
